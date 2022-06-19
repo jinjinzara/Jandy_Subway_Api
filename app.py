@@ -48,7 +48,7 @@ input_var = ['year', 'station_id', 'in_out_en', 'workday', '05_06', '06_07', '07
        '17_18', '18_19', '19_20', '20_21', '21_22', '22_23', '23_24', '24_']
 
 def predict_passengers(station_name, day, time):
-    df2021 = pd.read_csv('C:/Users/sangmyung/Desktop/LSM/zandi/subway/data/2022.csv', index_col=0)
+    df2021 = pd.read_csv('data/2022.csv', index_col=0)
     df2021 = df2021[df2021['in_out'] == 'in']
     try:
         df2021 = df2021[df2021['station_name'] == station_name]
@@ -64,7 +64,7 @@ def predict_passengers(station_name, day, time):
     df2021['workday'] = df2021['workday'].astype('bool')
     X = df2021[input_var]
     X = X.drop(time, axis=1)
-    rf = joblib.load('C:/Users/sangmyung/Desktop/LSM/zandi/subway/model/{}.joblib'.format(time))
+    rf = joblib.load('model/{}.joblib'.format(time))
     y_pred = rf.predict(X)
     
     if len(y_pred) < 1:
