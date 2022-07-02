@@ -25,10 +25,10 @@ def get_predictions():
         time = request.args.get('time')
         p = predict_passengers(station, day, time)
         if int(p) > 1280:
-            re = 5
+            re = 3
         else:
-            re = int(p) // 256
-        if re > 5:
+            re = int(p) // 425
+        if re > 3:
             re = 5
         result = json.dumps(re)
         return result, status.HTTP_200_OK, {"Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*"}
