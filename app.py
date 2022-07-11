@@ -29,7 +29,7 @@ def get_predictions():
         else:
             re = int(p) // 425
         if re > 3:
-            re = 5
+            re = 3
         result = json.dumps(re)
         return result, status.HTTP_200_OK, {"Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*"}
     
