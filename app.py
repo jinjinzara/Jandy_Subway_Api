@@ -47,11 +47,36 @@ input_var = ['year', 'station_id', 'in_out_en', 'workday', '05_06', '06_07', '07
        '09_10', '10_11', '11_12', '12_13', '13_14', '14_15', '15_16', '16_17',
        '17_18', '18_19', '19_20', '20_21', '21_22', '22_23', '23_24', '24_']
 
+def search_station(stn, stn_list):
+    if stn in stn_list:
+        return stn
+    
+    if '(' in stn:
+        stn1 = stn.split('(', 1)[0]
+        if stn1 in stn_list:
+            return stn1
+    
+    if stn[-1] != '역':
+        stn2 = stn + '역'
+        if stn2 in stn_list:
+            return stn2
+    
+    stn_list_pp = list(map((lambda x: x.split("(",1)[0]), stn_list))
+    if stn in stn_list_pp:
+        return stn_list[stn_list_pp.index(stn)]
+    stn_list_pp2 = list(map((lambda x: x + '역'), stn_list_pp))
+    if stn in stn_list_pp2:
+        return stn_list[stn_list_pp2.index(stn)]
+    
+    return 'wrong format'
+
 def predict_passengers(station_name, day, time):
     df2021 = pd.read_csv('data/2022.csv', index_col=0)
     df2021 = df2021[df2021['in_out'] == 'in']
+    stations = df2021['station_name'].tolist()
     try:
-        df2021 = df2021[df2021['station_name'] == station_name]
+        if search_station(station_name, stations) in stations:
+            df2021 = df2021[df2021['station_name'] == station_name]
     except:
         return 'wrong station name'
     
