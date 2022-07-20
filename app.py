@@ -24,12 +24,18 @@ def get_predictions():
         day = request.args.get('date')
         time = request.args.get('time')
         p = predict_passengers(station, day, time)
-        if int(p) > 1280:
+        
+        if type(p) is str:
+            content = {'error message': p}
+            return json.dumps(content), status.HTTP_400_BAD_REQUEST
+        
+        if int(p) > 12 * 1280:
             re = 3
+        elif int(p) > 12 * 852:
+            re = 2
         else:
-            re = int(p) // 425
-        if re > 3:
-            re = 3
+            re = 1
+    
         result = json.dumps(re)
         return result, status.HTTP_200_OK, {"Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*"}
     
@@ -43,10 +49,6 @@ def is_workday(d):
                datetime.date(pydate.year, 1, 1)]
     return pydate.weekday() < 5 and pydate not in holidays
 
-input_var = ['year', 'station_id', 'in_out_en', 'workday', '05_06', '06_07', '07_08', '08_09',
-       '09_10', '10_11', '11_12', '12_13', '13_14', '14_15', '15_16', '16_17',
-       '17_18', '18_19', '19_20', '20_21', '21_22', '22_23', '23_24', '24_']
-
 def search_station(stn, stn_list):
     if stn in stn_list:
         return stn
@@ -56,46 +58,44 @@ def search_station(stn, stn_list):
         if stn1 in stn_list:
             return stn1
     
-    if stn[-1] != '역':
-        stn2 = stn + '역'
-        if stn2 in stn_list:
-            return stn2
-    
     stn_list_pp = list(map((lambda x: x.split("(",1)[0]), stn_list))
     if stn in stn_list_pp:
         return stn_list[stn_list_pp.index(stn)]
-    stn_list_pp2 = list(map((lambda x: x + '역'), stn_list_pp))
-    if stn in stn_list_pp2:
-        return stn_list[stn_list_pp2.index(stn)]
     
     return 'wrong format'
 
 def predict_passengers(station_name, day, time):
-    df2021 = pd.read_csv('data/2022.csv', index_col=0)
-    df2021 = df2021[df2021['in_out'] == 'in']
-    stations = df2021['station_name'].tolist()
-    try:
-        if search_station(station_name, stations) in stations:
-            df2021 = df2021[df2021['station_name'] == station_name]
-    except:
+    df2022 = pd.read_csv('data/2022.csv', index_col=0)
+    df2022 = df2022[df2022['in_out'] == 'in']
+    stations = df2022['station_name'].tolist()
+    
+    if search_station(station_name, stations) in stations:
+        df2022 = df2022[df2022['station_name'] == search_station(station_name, stations)]
+    else:
         return 'wrong station name'
     
-    df2021['workday'] = df2021['workday'].astype('str')
+    df2022['workday'] = df2022['workday'].astype('bool')
     try:
-        df2021 = df2021[df2021['workday'] == str(is_workday(day))]
+        df2022 = df2022[df2022['workday'] == is_workday(day)]
     except:
         return 'wrong date format'
     
-    df2021['workday'] = df2021['workday'].astype('bool')
-    X = df2021[input_var]
-    X = X.drop(time, axis=1)
+    input_var = ['year', 'station_id', 'in_out_en', 'workday', '05_06', '06_07', '07_08', '08_09',
+           '09_10', '10_11', '11_12', '12_13', '13_14', '14_15', '15_16', '16_17',
+           '17_18', '18_19', '19_20', '20_21', '21_22', '22_23', '23_24', '24_']
+    
+    X = df2022[input_var]
+    try:
+        X = X.drop(time, axis=1)
+    except:
+        return 'wrong time format'
+    
+    if len(X) < 1:
+        return 'invalid data'
+    
     rf = joblib.load('model/{}.joblib'.format(time))
     y_pred = rf.predict(X)
-    
-    if len(y_pred) < 1:
-        return 'wrong time format'
-    elif len(y_pred) > 1:
-        y_pred = y_pred.mean()
+    y_pred = y_pred.mean()
     return y_pred
 
 if __name__ == '__main__':
